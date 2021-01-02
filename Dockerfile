@@ -1,29 +1,13 @@
 # based Dockerfiles links from https://hub.docker.com/r/nvidia/cuda
 
-FROM nvcr.io/nvidia/cuda:11.0-devel-ubuntu18.04
+FROM nvcr.io/nvidia/cuda:11.0-cudnn8-devel-ubuntu18.04
 LABEL maintainer "Maciej Aleksandrowicz<macale@student.agh.edu.pl>"
 
 
 # ---------------------------------------------------------------------------- #
 # CONFIG
 
-ENV CUDNN_VERSION 8.0.4.30
 ENV PYTHON_VERSION 3.8
-
-LABEL com.ubuntu.version="18.04"
-LABEL com.nvidia.cuda.version="11.0"
-LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
-
-
-# ---------------------------------------------------------------------------- #
-# cuDNN
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn8=$CUDNN_VERSION-1+cuda11.0 \
-    libcudnn8-dev=$CUDNN_VERSION-1+cuda11.0 \
-    && apt-mark hold libcudnn8 && \
-    rm -rf /var/lib/apt/lists/*
-
 ENV CUDNN_LIB_DIR="/usr/local/cuda-11.0/lib64"
 ENV CUDNN_INCLUDE_DIR="/usr/local/cuda-11.0/include"
 
