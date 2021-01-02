@@ -7,7 +7,7 @@ LABEL maintainer "Maciej Aleksandrowicz<macale@student.agh.edu.pl>"
 # ---------------------------------------------------------------------------- #
 # CONFIG
 
-ENV PYTHON_VERSION 3.8
+ENV PYTHON_VERSION 3.8.5
 ENV CUDNN_LIB_DIR="/usr/local/cuda-11.0/lib64"
 ENV CUDNN_INCLUDE_DIR="/usr/local/cuda-11.0/include"
 
@@ -28,10 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tmux \
     && rm -rf /var/lib/apt/lists/*
 
-
 # ---------------------------------------------------------------------------- #
 # Create an user
-
 RUN mkdir /mnt/ws \
  && adduser --disabled-password --gecos '' --shell /bin/bash user \
  && chown -R user:user /mnt/ws \
@@ -54,18 +52,20 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.
  && conda install -y python==${PYTHON_VERSION} \
  && conda clean -ya
 
-
 # ---------------------------------------------------------------------------- #
 # Pytorch + torchvision + python packages + jupyter-lab
 
 RUN python3 -m pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html \
-    pyrsistent \
+RUN python3 -m pip install \
     gym \
+ && conda install \
     tensorboard \ 
     jupyterlab \
-    jupyter-tensorboard \
- && mkdir -p /home/user/.jupyter && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py
-
+ && mkdir -p /home/user/.jupyter \
+ && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py \
+ && conda clean -ya \
+ && rm -r /home/user/.cache/pip
+ 
 EXPOSE 8888
 EXPOSE 6006
 
