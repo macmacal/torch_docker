@@ -1,21 +1,37 @@
-FROM nvcr.io/nvidia/cuda:10.1-devel-ubuntu18.04
+# based Dockerfiles links from https://hub.docker.com/r/nvidia/cuda
+
+FROM nvcr.io/nvidia/cuda:11.0-devel-ubuntu18.04
 LABEL maintainer "Maciej Aleksandrowicz<macale@student.agh.edu.pl>"
+
 
 # ---------------------------------------------------------------------------- #
 # CONFIG
-ENV CUDNN_VERSION 7.6.5.32
-ENV PYTORCH_TAG=v1.4.0a0
-ENV TORCHVISION_TAG=v0.5.0
-ENV TORCH_CUDA_ARCH_LIST="5.0;7.5"
 
+ENV CUDNN_VERSION 8.0.4.30
+ENV PYTHON_VERSION 3.8
+
+LABEL com.ubuntu.version="18.04"
+LABEL com.nvidia.cuda.version="11.0"
 LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
 
+
 # ---------------------------------------------------------------------------- #
-# cuDNN + Pytorch
+# cuDNN
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn7=$CUDNN_VERSION-1+cuda10.1 \
-    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 \
+    libcudnn8=$CUDNN_VERSION-1+cuda11.0 \
+    libcudnn8-dev=$CUDNN_VERSION-1+cuda11.0 \
+    && apt-mark hold libcudnn8 && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV CUDNN_LIB_DIR="/usr/local/cuda-11.0/lib64"
+ENV CUDNN_INCLUDE_DIR="/usr/local/cuda-11.0/include"
+
+
+# ---------------------------------------------------------------------------- #
+# Utility tools
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     sudo \
@@ -26,20 +42,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     mc \
     tmux \
-    && apt-mark hold libcudnn7 && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /ws && mkdir /mnt/ws
-WORKDIR /ws
 
-#User is needed for miniconda env
-RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
- && chown -R user:user /ws && chown -R user:user /mnt/ws
-RUN echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-user
+# ---------------------------------------------------------------------------- #
+# Create an user
+
+RUN mkdir /mnt/ws \
+ && adduser --disabled-password --gecos '' --shell /bin/bash user \
+ && chown -R user:user /mnt/ws \
+ && chmod 777 /home/user \
+ && echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-user \
+ && ln -s /mnt/ws /home/user/ws
 USER user
-
 ENV HOME=/home/user
-RUN chmod 777 /home/user
+
+
+# ---------------------------------------------------------------------------- #
+# Miniconda environment
 
 ENV CONDA_AUTO_UPDATE_CONDA=false
 ENV PATH=/home/user/miniconda/bin:$PATH
@@ -47,49 +67,23 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.
  && chmod +x ~/miniconda.sh \
  && ~/miniconda.sh -b -p ~/miniconda \
  && rm ~/miniconda.sh \
- && conda install -y python==3.6.9 \
+ && conda install -y python==${PYTHON_VERSION} \
  && conda clean -ya
 
-#CUDA 10.1-specific steps for BUILD
-RUN cd /ws
-
-# DOWNLOAD SOURCE AND CHECKOUTS
-RUN git clone --depth 1 --branch ${PYTORCH_TAG} --recursive https://github.com/pytorch/pytorch
-RUN cd pytorch
-
-# INSTALL DEPENDENCIES
-RUN conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing
-RUN conda install -c pytorch magma-cuda101
-
-# SET ENV VARIABLES
-ENV CUDNN_LIB_DIR="/usr/local/cuda-10.1/lib64"
-ENV CUDNN_INCLUDE_DIR="/usr/local/cuda-10.1/include"
-ENV CMAKE_PREFIX_PATH="$(dirname $(which conda))/../"
-
-# BUILD PACKAGE
-RUN cd pytorch && python3 setup.py sdist bdist_wheel && echo "Finished building torch at $(date)" 
-
-RUN cd /ws/pytorch/dist && python3 -m pip install ./torch-*.whl
-
-# DELOCATING DYNAMIC LIBRARIRES LINKS
-#RUN find ./ -name "*.whl" | xargs -I {} delocate-wheel -v {} && find ./ -name "*.whl" | xargs -I {} delocate-listdeps {} && echo "Finished deolcating at $(date)"
-
 
 # ---------------------------------------------------------------------------- #
-# torchvision
+# Pytorch + torchvision + python packages + jupyter-lab
 
-RUN cd /ws && git clone --depth 1 --branch ${TORCHVISION_TAG} --recursive https://github.com/pytorch/vision.git
+RUN python3 -m pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html \
+    pyrsistent \
+    gym \
+    tensorboard \ 
+    jupyterlab \
+    jupyter-tensorboard \
+ && mkdir -p /home/user/.jupyter && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py
 
-RUN cd vision && python3 setup.py sdist bdist_wheel && echo "Finished building torchvision at $(date)"
-
-RUN cd /ws/vision/dist && python3 -m pip install ./torchvision-*.whl
-
-# ---------------------------------------------------------------------------- #
-# jupyter-lab
-
-RUN python3 -m pip install jupyterlab
 EXPOSE 8888
-RUN mkdir -p /home/user/.jupyter && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py
+EXPOSE 6006
 
 # Default command
 CMD ["jupyter-lab"]
