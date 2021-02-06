@@ -55,7 +55,7 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.
 # ---------------------------------------------------------------------------- #
 # Pytorch + torchvision + python packages + jupyter-lab
 
-RUN python3 -m pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html \
+RUN python3 -m pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html
 RUN python3 -m pip install \
     gym \
  && conda install \
