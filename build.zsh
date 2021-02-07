@@ -1,16 +1,12 @@
-#!/usr/bin/env zsh
+#!/bin/zsh
 
-TAG='0.1.6'
-
-if [ $# -eq 0 ]
-  then
-    echo "Building torch_docker with tag ${TAG}"
-  else
-    tag=$1
-fi
+TAG='0.1.9'
+echo "Building torch_docker with tag ${TAG}"
 
 docker build -t labvault:5000/agh/torch_devel:$TAG .
 
-sed -i '/torch_devel/d' ~/.zshrc
-echo "alias torch_devel='docker run -p 8888:8888 -p 6006:6006 -v \$(pwd):/mnt/ws --gpus all labvault:5000/agh/torch_devel:${TAG}'" >> ~/.zshrc
-echo "Added "torch_devel" allias to ~/.zshrc"
+sed -i '/torch_devel/d' ~/.zshrc;
+echo "alias torch_devel='docker run -p 8888:8888 -p 6006:6006 -p 5900:5900 -v \$(pwd):/mnt/ws --gpus all labvault:5000/agh/torch_devel:${TAG}'" >> ~/.zshrc
+echo "Added "torch_devel" allias to ~/.zshrc" 
+source ~/.zshrc;
+echo "Sourced ~/.zshrc"

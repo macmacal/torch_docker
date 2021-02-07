@@ -9,25 +9,51 @@ It will setup a container with following technologies:
 * Torchvision
 * OpenAI Gym
 
+## Building && installation
 
-## Building && instalation
+### Requirements
 
-For `bash` shell please use following script:
+* Nvidia GPU with CUDA (C.C. >= 5.0)
+* nvidia driver for >= CUDA 11.0
+* Docker with GPU support
+
+### Docker image
+For `zsh` shell please use following script:
 ```bash
-bash ./build.sh
-source ~/.bashrc
+zsh ./build.sh
 ```
 
-For `zsh` shell please use:
+### VNC client
+Install `x11vnc` for render preview.
+Arch:
 ```bash
-zsh ./build.zsh
-source ~/.zshrc
+sudo pacman -S x11vnc
 ```
 
+Ubuntu:
+```bash
+sudo apt install x11vnc
+```
 ## Usage
-Type:
+
+Run `torch_devel` container with bind-mount to current directory:
 ```bash
 cd /path/to/working/dir
 torch_devel
 ```
-Runs `torch_devel` docker with bind-mount to current directory.
+
+Connecting to `xvfb` server in container:
+```bash
+
+```
+
+## Notes
+
+Exposed ports:
+
+| Port | Description |
+| ---- | ----------- |
+| 8888 | Jupyter-lab |
+| 6006 | Tensorboard |
+| 5900 | xvfb server |
+
