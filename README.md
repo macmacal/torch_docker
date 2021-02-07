@@ -24,15 +24,16 @@ zsh ./build.sh
 ```
 
 ### VNC client
-Install `x11vnc` for render preview.
+Install `tigervnc` for render preview.
+
 Arch:
 ```bash
-sudo pacman -S x11vnc
+sudo pacman -S tigervnc
 ```
 
 Ubuntu:
 ```bash
-sudo apt install x11vnc
+sudo apt install tigervnc
 ```
 ## Usage
 
@@ -42,9 +43,9 @@ cd /path/to/working/dir
 torch_devel
 ```
 
-Connecting to `xvfb` server in container:
+Connecting to `xvnc` server in container (password: `1234`):
 ```bash
-
+vncviewer localhost:0
 ```
 
 ## Notes
@@ -53,7 +54,7 @@ Exposed ports:
 
 | Port | Description |
 | ---- | ----------- |
-| 8888 | Jupyter-lab |
-| 6006 | Tensorboard |
 | 5900 | xvfb server |
-
+| 6006 | Tensorboard |
+| 6099 | x11vnc      |
+| 8888 | Jupyter-lab |

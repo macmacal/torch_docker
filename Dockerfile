@@ -6,15 +6,21 @@ LABEL maintainer "Maciej Aleksandrowicz<macale@student.agh.edu.pl>"
 # ---------------------------------------------------------------------------- #
 # CONFIG
 
-ENV PYTHON_VERSION 3.8.5
-ENV CUDNN_LIB_DIR="/usr/local/cuda-11.0/lib64"
-ENV CUDNN_INCLUDE_DIR="/usr/local/cuda-11.0/include"
-ENV DISPLAY :99
+ENV \
+  PYTHON_VERSION="3.8.5" \
+  CUDNN_LIB_DIR="/usr/local/cuda-11.0/lib64" \
+  CUDNN_INCLUDE_DIR="/usr/local/cuda-11.0/include" \
+  DEBIAN_FRONTEND="noninteractive" \
+  X11VNC_PASSWORD="password" \
+  TZ="Europe/Warsaw"
+
+EXPOSE 5900 6006 6099 8888
 
 # ---------------------------------------------------------------------------- #
 # Utility tools
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata \
     curl \
     ca-certificates \
     sudo \
@@ -26,9 +32,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     mc \
     tmux \
-    xvfb \
     python-opengl \
+    xvfb \
+    x11vnc \
+    ratpoison \
+    xterm \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# ---------------------------------------------------------------------------- #
+# Configure timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+ && dpkg-reconfigure -f noninteractive tzdata
 
 # ---------------------------------------------------------------------------- #
 # Create an user
@@ -60,7 +74,6 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.
 RUN python3 -m pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html
 RUN python3 -m pip install \
     gym \
-    pyvirtualdisplay \
  && conda install \
     tensorboard \ 
     jupyterlab \
@@ -69,17 +82,15 @@ RUN python3 -m pip install \
  && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py \
  && conda clean -ya \
  && rm -r /home/user/.cache/pip
- 
-EXPOSE 8888
-EXPOSE 6006
-EXPOSE 5900
+
+
 
 # ---------------------------------------------------------------------------- #
-# Default command
+# Entrypoint config
 USER root
-RUN echo '#!/bin/bash' > /home/user/run.sh && \
-    echo '/usr/bin/xvfb-run -s "-screen 0 1280x720x24" jupyter lab --no-browser' >> /home/user/run.sh && \
-    echo 'echo "Running jupyter lab from xvfb-run"' >> /home/user/run.sh && \
-    chmod +x /home/user/run.sh
+COPY "container-start.sh" "/opt/container-start.sh"
+COPY "xsession-start.sh" "/opt/xsession-start.sh"
+RUN chmod +x "/opt/container-start.sh" "/opt/xsession-start.sh"
+
 USER user
-CMD ["jupyter lab"]
+CMD ["/opt/container-start.sh"]
