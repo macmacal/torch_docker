@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-TAG='0.1.9'
+TAG='0.1.10'
 echo "Building torch_docker with tag ${TAG}"
 
 start=`date +%s`
