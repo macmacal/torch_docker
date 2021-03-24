@@ -79,6 +79,7 @@ RUN python3 -m pip install \
     jupyterlab \
     matplotlib \
     pandas \
+    pyyaml \
  && mkdir -p /home/user/.jupyter \
  && (echo "c.NotebookApp.ip = '*'"; echo "c.NotebookApp.notebook_dir = '/mnt/ws'")  >> /home/user/.jupyter/jupyter_notebook_config.py \
  && conda clean -ya \
